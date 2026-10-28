@@ -6,8 +6,15 @@
 #include <godot_cpp/godot.hpp>
 
 #include "example_class.h"
+#include "secure_loader.h"
+#include "secure_format_loader.h"
+
+#include <godot_cpp/classes/resource_loader.hpp>
 
 using namespace godot;
+
+// Guardamos el cargador para quitarlo al cerrar.
+static Ref<SecureFormatLoader> secure_format_loader;
 
 void initialize_gdextension_types(ModuleInitializationLevel p_level)
 {
@@ -15,11 +22,21 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 		return;
 	}
 	GDREGISTER_CLASS(ExampleClass);
+	GDREGISTER_CLASS(SecureLoader);
+	GDREGISTER_CLASS(SecureFormatLoader);
+
+	// Darle nuestro cargador a Godot (al frente, para que gane sobre otros).
+	secure_format_loader.instantiate();
+	ResourceLoader::get_singleton()->add_resource_format_loader(secure_format_loader, true);
 }
 
 void uninitialize_gdextension_types(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
+	}
+	if (secure_format_loader.is_valid()) {
+		ResourceLoader::get_singleton()->remove_resource_format_loader(secure_format_loader);
+		secure_format_loader.unref();
 	}
 }
 
