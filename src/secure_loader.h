@@ -19,4 +19,7 @@ public:
 
 	// Lee un .gde cifrado, lo descifra y devuelve un Script listo para usar con .new().
 	Ref<Script> load_script(const String &path, const String &password);
+
+	// Cifra bytes en memoria y les antepone el sello SEC1. Lo usa el export plugin.
+	PackedByteArray encrypt_bytes(const PackedByteArray &data);
 };

@@ -29,3 +29,12 @@ func _ready() -> void:
 		return
 	var obj2 = S2.new()
 	print("automatico: ", obj2.hola())  # espera 42
+	
+		# --- Prueba 3: extension .gd real (el crux) ---
+	loader.encrypt_file("user://plain.gd", "user://real.gd", "mi-clave")
+	var S3 = load("user://real.gd")
+	if S3 == null:
+		print("FALLO crux: load real.gd devolvio null")
+		return
+	var obj3 = S3.new()
+	print("crux: ", obj3.hola())  # espera 42

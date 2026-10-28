@@ -12,6 +12,7 @@ static const char *SECURE_PASSWORD = "mi-clave";
 
 PackedStringArray SecureFormatLoader::_get_recognized_extensions() const {
 	PackedStringArray exts;
+	exts.push_back("gd");
 	exts.push_back("gde");
 	return exts;
 }
@@ -29,13 +30,20 @@ String SecureFormatLoader::_get_resource_type(const String &path) const {
 }
 
 Variant SecureFormatLoader::_load(const String &path, const String &original_path, bool use_sub_threads, int32_t cache_mode) const {
+	UtilityFunctions::print("mi _load: ", path);
+
 	Ref<FileAccess> f = FileAccess::open(path, FileAccess::READ);
 	if (f.is_null()) {
-		UtilityFunctions::push_error("SecureFormatLoader: no se pudo abrir ", path);
 		return Variant();
 	}
-	PackedByteArray enc = f->get_buffer(f->get_length());
+	PackedByteArray raw = f->get_buffer(f->get_length());
 	f->close();
+
+	// sin sello SEC1 no es nuestro: que lo cargue Godot
+	if (raw.size() < 4 || raw[0] != 'S' || raw[1] != 'E' || raw[2] != 'C' || raw[3] != '1') {
+		return Variant();
+	}
+	PackedByteArray enc = raw.slice(4);
 
 	PackedByteArray key = secure_key_from_password(String(SECURE_PASSWORD));
 	PackedByteArray plain = secure_xor(enc, key);
@@ -45,7 +53,7 @@ Variant SecureFormatLoader::_load(const String &path, const String &original_pat
 	script.instantiate();
 	script->set_source_code(source);
 	if (script->reload() != OK) {
-		UtilityFunctions::push_error("SecureFormatLoader: el script no compilo: ", path);
+		UtilityFunctions::push_error("SecureFormatLoader: no compilo: ", path);
 		return Variant();
 	}
 	return script;
